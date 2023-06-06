@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<link rel="shortcut icon" href="{{ url_for('static', filename='favicon.ico') }}">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MLB Game Predictions</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <style>
+        body {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin: 0;
+            padding: 20px;
+            padding-left: 80px;
+            padding-right: 80px;
+        }
+
+        .boxes-container {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: left;
+        }
+
+        .box {
+            width: 300px;
+            height: 145px;
+            padding: 10px;
+            margin: 10px;
+            border: 2px solid;
+            border-radius: 5px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: flex-start;
+        }
+
+        .green {
+            border-color: green;
+        }
+
+        .red {
+            border-color: red;
+        }
+
+        .silver {
+            border-color: silver;
+        }
+
+        h1 {
+            font-size: 40px;
+            margin-bottom: 20px;
+        }
+
+        .predictions-info {
+            display: flex;
+            flex-direction: row;
+            align-items: center;
+            margin-bottom: 20px;
+            font-size: 18px;
+        }
+
+        .predictions-number {
+            font-size: 36px;
+            margin-bottom: 5px;
+        }
+
+        .predictions-label {
+            font-size: 14px;
+        }
+
+        h3,
+        p {
+            font-size: 14px;
+            margin: 0;
+            overflow-wrap: break-word;
+            word-wrap: break-word;
+            hyphens: auto;
+        }
+
+        .team-logo {
+            max-width: 80px;
+            max-height: 60px;
+            margin-right: 10px;
+        }
+
+        .predictions-info {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            font-size: 18px;
+        }
+
+        .predictions-group {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding-right: 50px;
+            padding-left: 50px;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>MLB Game Predictions</h1>
+    <div class="predictions-info">
+        <div class="predictions-group">
+            <div class="predictions-number">{{ correct_percent }}%</div>
+            <div class="predictions-label">Correct Predictions</div>
+        </div>
+        <div class="predictions-group">
+            <div class="predictions-number">{{ games_attempted }}</div>
+            <div class="predictions-label">Games Attempted to Predict</div>
+        </div>
+        <div class="predictions-group">
+            <div class="predictions-number">{{ predictions_to_be_made }}</div>
+            <div class="predictions-label">Awaiting Results</div>
+        </div>
+    </div>
+
+
+    <div class="boxes-container">
+        {% for game in games %}
+        {% if game.actual_winner == 'TBD' %}
+        <div class="box silver">
+            <h3>
+                <img src="{{ game.team1_logo }}" alt="Team A Logo" class="team-logo">
+                vs.
+                <img src="{{ game.team2_logo }}" alt="Team B Logo" class="team-logo">
+            </h3>
+            <p>Prediction: {{ game.prediction }}</p>
+            <p>Actual Winner: {{ game.actual_winner }}</p>
+            <p><a href={{ game.box }} target="_blank">Preview</a></p>
+        </div>
+        {% else %}
+        <div class="box {% if game.prediction == game.actual_winner %}green{% else %}red{% endif %}">
+            <h3>
+                <img src="{{ game.team1_logo }}" alt="Team A Logo" class="team-logo">
+                vs.
+                <img src="{{ game.team2_logo }}" alt="Team B Logo" class="team-logo">
+            </h3>
+            <p>Prediction: {{ game.prediction }}</p>
+            <p>Actual Winner: {{ game.actual_winner }}</p>
+            <p><a href={{ game.box }} target="_blank">Box Score</a></p>
+        </div>
+        {% endif %}
+        {% endfor %}
+    </div>
+</body>
+
+</html>
