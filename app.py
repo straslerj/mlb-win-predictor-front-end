@@ -1,6 +1,12 @@
-import psycopg2
+import boto3
 import os
+import numpy as np
 import pandas as pd
+import pickle
+import psycopg2
+import warnings
+
+warnings.filterwarnings("ignore")
 
 
 from flask import Flask, render_template
@@ -21,6 +27,8 @@ def create_db_connection():
 
 @app.route("/")
 def display_games():
+    predict_games()
+
     conn = create_db_connection()
     cursor = conn.cursor()
 
@@ -74,6 +82,86 @@ def display_games():
         games_attempted=games_attempted,
         predictions_to_be_made=future_games,
     )
+
+
+def predict_games():
+    s3 = boto3.resource("s3")
+
+    print(os.getenv("AWS_S3_MODEL_SRC"))
+    bucket = s3.Bucket(os.getenv("AWS_S3_MODEL_SRC"))
+
+    current_file = max(bucket.objects.all(), key=lambda obj: obj.key).key
+
+    model_pickle = pickle.loads(
+        s3.Bucket(os.getenv("AWS_S3_MODEL_SRC"))
+        .Object(current_file)
+        .get()["Body"]
+        .read()
+    )
+
+    model, model_metadata = model_pickle
+
+    print("\n".join([f"{key}: {value}" for key, value in model_metadata.items()]))
+
+    conn = create_db_connection()
+    cursor = conn.cursor()
+
+    sql = f"select * from games where predicted_winner is null"
+
+    cursor.execute(sql)
+
+    column_names = [desc[0] for desc in cursor.description]
+
+    rows = cursor.fetchall()
+
+    df = pd.DataFrame(rows, columns=column_names)
+
+    df = df.dropna()
+
+    sql = f"select * from games where winning_team is null"
+
+    cursor.execute(sql)
+
+    rows = cursor.fetchall()
+
+    df2 = pd.DataFrame(rows, columns=column_names)
+
+    df = df.append(df2)
+
+    for _, row in df.iterrows():
+        pitcher_innings_pitched_comp = (
+            row["away_pitcher_innings_pitched"] - row["home_pitcher_innings_pitched"]
+        )
+        pitcher_k_nine_comp = row["away_pitcher_k_nine"] - row["home_pitcher_k_nine"]
+        pitcher_bb_nine_comp = row["away_pitcher_bb_nine"] - row["home_pitcher_bb_nine"]
+        pitcher_k_bb_diff_comp = (
+            row["away_pitcher_k_bb_diff"] - row["home_pitcher_k_bb_diff"]
+        )
+        pitcher_whip_comp = row["away_pitcher_whip"] - row["home_pitcher_whip"]
+        pitcher_babip_comp = row["away_pitcher_babip"] - row["home_pitcher_babip"]
+
+        comparison = [
+            [
+                pitcher_innings_pitched_comp,
+                pitcher_k_nine_comp,
+                pitcher_bb_nine_comp,
+                pitcher_k_bb_diff_comp,
+                pitcher_whip_comp,
+                pitcher_babip_comp,
+            ]
+        ]
+        comparison = np.array(comparison)
+
+        comparison = comparison.reshape(comparison.shape[0], -1)
+
+        prediction = model.predict(comparison)
+
+        sql = f"UPDATE games SET predicted_winner = {prediction[0]} WHERE game_id = {int(row['game_id'])};"
+
+        print(sql)
+        cursor.execute(sql)
+
+    conn.commit()
 
 
 if __name__ == "__main__":
