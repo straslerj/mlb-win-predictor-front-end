@@ -25,6 +25,19 @@ def create_db_connection():
     )
 
 
+s3 = boto3.resource("s3")
+
+bucket = s3.Bucket(os.getenv("AWS_S3_MODEL_SRC"))
+
+current_file = max(bucket.objects.all(), key=lambda obj: obj.key).key
+
+model_pickle = pickle.loads(
+    s3.Bucket(os.getenv("AWS_S3_MODEL_SRC")).Object(current_file).get()["Body"].read()
+)
+
+model, model_metadata = model_pickle
+
+
 @app.route("/")
 def display_games():
     predict_games()
@@ -84,12 +97,33 @@ def display_games():
     )
 
 
+@app.route("/about")
+def display_about():
+    current_file = max(bucket.objects.all(), key=lambda obj: obj.key).key
+
+    model_pickle = pickle.loads(
+        s3.Bucket(os.getenv("AWS_S3_MODEL_SRC"))
+        .Object(current_file)
+        .get()["Body"]
+        .read()
+    )
+
+    _, model_metadata = model_pickle
+
+    parameter_count = len(model_metadata["parameters used"].split(","))
+    return render_template(
+        "about.html",
+        date_created=model_metadata["date created"],
+        model_type=model_metadata["model type"],
+        parameters_used=model_metadata["parameters used"],
+        parameter_count=parameter_count,
+        accuracy=model_metadata["accuracy"],
+        training_set_size=model_metadata["training set size"],
+        testing_set_size=model_metadata["testing set size"],
+    )
+
+
 def predict_games():
-    s3 = boto3.resource("s3")
-
-    print(os.getenv("AWS_S3_MODEL_SRC"))
-    bucket = s3.Bucket(os.getenv("AWS_S3_MODEL_SRC"))
-
     current_file = max(bucket.objects.all(), key=lambda obj: obj.key).key
 
     model_pickle = pickle.loads(

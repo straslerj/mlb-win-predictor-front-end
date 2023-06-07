@@ -55,6 +55,12 @@
             margin-bottom: 20px;
         }
 
+        h2 {
+            font-size: 25px;
+            margin-bottom: 20px;
+            font-weight: 300;
+        }
+
         .predictions-info {
             display: flex;
             flex-direction: row;
@@ -138,11 +144,18 @@
             background-color: #007bff;
             color: white;
         }
+
+        .link {
+            color: black;
+        }
     </style>
 </head>
 
 <body>
     <h1>MLB Game Predictions</h1>
+
+    <h2><a class=link href="/about"><em>Learn about this project &rarr;</em></a></h2>
+
     <div class="predictions-info">
         <div class="predictions-group">
             <div class="predictions-number">{{ correct_percent }}%</div>

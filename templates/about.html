@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>About - MLB Game Predictions</title>
+    <style>
+        table {
+            border-collapse: collapse;
+            width: 100%;
+        }
+
+        th,
+        td {
+            text-align: left;
+            padding: 8px;
+            border-bottom: 1px solid #ddd;
+        }
+
+        th {
+            background-color: #f2f2f2;
+        }
+    </style>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/5.0.0-alpha2/css/bootstrap.min.css">
+</head>
+
+<body>
+    <nav class="navbar navbar-expand-lg navbar-light bg-light">
+        <div class="container">
+            <a class="navbar-brand" href="/">&larr; MLB Game Predictions</a>
+        </div>
+    </nav>
+
+    <div class="container mt-4">
+        <h1>About</h1>
+        <p>This projet is designed to attempt to predict the winner of baseball games (or prove that doing so is not
+            really possible...) using machine learning. To learn more about this effort, please visit
+            <a href="https://github.com/straslerj/mlb-win-predictor" target=" _blank">this GitHub repo</a>.
+        </p>
+        <p>The goal of this website is simply to visualize the progress and provide some insights into the logic behind
+            the machine learning part. The details of the current state of the model can be seen in the below table.</p>
+
+        <table>
+            <tr>
+                <th>Date Created</th>
+                <td>{{ date_created }}</td>
+            </tr>
+            <tr>
+                <th>Model Type</th>
+                <td>{{ model_type }}</td>
+            </tr>
+            <tr>
+                <th>Parameters Used</th>
+                <td>{{ parameters_used }}</td>
+            </tr>
+            <tr>
+                <th>Parameter Count</th>
+                <td>{{ parameter_count }}</td>
+            </tr>
+            <tr>
+                <th>Accuracy</th>
+                <td>{{ accuracy }}</td>
+            </tr>
+            <tr>
+                <th>Training Set Size</th>
+                <td>{{ training_set_size }}</td>
+            </tr>
+            <tr>
+                <th>Testing Set Size</th>
+                <td>{{ testing_set_size }}</td>
+            </tr>
+        </table>
+    </div>
+
+
+
+
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/5.0.0-alpha2/js/bootstrap.bundle.min.js"></script>
+</body>
+
+</html>
