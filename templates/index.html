@@ -99,8 +99,44 @@
             display: flex;
             flex-direction: column;
             align-items: center;
-            padding-right: 50px;
-            padding-left: 50px;
+            padding-right: 30px;
+            padding-left: 30px;
+        }
+
+        .filter-buttons {
+            display: flex;
+            justify-content: center;
+            margin-bottom: 20px;
+        }
+
+        .filter-button {
+            padding: 8px 16px;
+            margin: 0 4px;
+            font-size: 14px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        /* Customize button colors */
+        .filter-button[data-color="green"] {
+            background-color: green;
+            color: white;
+        }
+
+        .filter-button[data-color="red"] {
+            background-color: red;
+            color: white;
+        }
+
+        .filter-button[data-color="silver"] {
+            background-color: silver;
+            color: black;
+        }
+
+        .filter-button[data-color="all"] {
+            background-color: #007bff;
+            color: white;
         }
     </style>
 </head>
@@ -122,6 +158,12 @@
         </div>
     </div>
 
+    <div class="filter-buttons">
+        <button class="filter-button" data-color="green">Correct</button>
+        <button class="filter-button" data-color="red">Incorrect</button>
+        <button class="filter-button" data-color="silver">Awaiting</button>
+        <button class="filter-button" data-color="all">All</button>
+    </div>
 
     <div class="boxes-container">
         {% for game in games %}
@@ -150,6 +192,34 @@
         {% endif %}
         {% endfor %}
     </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            // Get all filter buttons
+            const filterButtons = document.querySelectorAll('.filter-button');
+
+            // Get all boxes
+            const boxes = document.querySelectorAll('.box');
+
+            // Add click event listeners to each filter button
+            filterButtons.forEach(function (button) {
+                button.addEventListener('click', function () {
+                    // Get the color to filter by
+                    const color = this.getAttribute('data-color');
+
+                    // Show/hide boxes based on the selected color
+                    boxes.forEach(function (box) {
+                        if (color === 'all' || box.classList.contains(color)) {
+                            box.style.display = 'flex';
+                        } else {
+                            box.style.display = 'none';
+                        }
+                    });
+                });
+            });
+        });
+    </script>
+
 </body>
 
 </html>
