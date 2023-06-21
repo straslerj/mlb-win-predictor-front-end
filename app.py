@@ -162,6 +162,41 @@ def predict_games():
 
     df = df.append(df2)
 
+    df = df.dropna(
+        subset=[
+            "game_id",
+            "home_team_id",
+            "home_team_name",
+            "away_team_id",
+            "away_team_name",
+            "home_pitcher",
+            "home_pitcher_id",
+            "home_pitcher_era",
+            "home_pitcher_win_percentage",
+            "home_pitcher_wins",
+            "home_pitcher_losses",
+            "home_pitcher_innings_pitched",
+            "away_pitcher",
+            "away_pitcher_id",
+            "away_pitcher_era",
+            "away_pitcher_win_percentage",
+            "away_pitcher_wins",
+            "away_pitcher_losses",
+            "away_pitcher_innings_pitched",
+            "home_pitcher_k_nine",
+            "home_pitcher_bb_nine",
+            "home_pitcher_k_bb_diff",
+            "home_pitcher_whip",
+            "home_pitcher_babip",
+            "away_pitcher_k_nine",
+            "away_pitcher_bb_nine",
+            "away_pitcher_k_bb_diff",
+            "away_pitcher_whip",
+            "away_pitcher_babip",
+        ],
+        how="any",
+    )
+
     for _, row in df.iterrows():
         pitcher_innings_pitched_comp = (
             row["away_pitcher_innings_pitched"] - row["home_pitcher_innings_pitched"]
