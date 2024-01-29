@@ -23,9 +23,7 @@
             display: flex;
             flex-wrap: wrap;
             justify-content: center;
-            /* Center-align the boxes horizontally */
         }
-
 
         .box {
             width: 300px;
@@ -126,7 +124,6 @@
             cursor: pointer;
         }
 
-        /* Customize button colors */
         .filter-button[data-color="green"] {
             background-color: green;
             color: white;
@@ -208,21 +205,17 @@
         {% endfor %}
     </div>
 
+
     <script>
         document.addEventListener('DOMContentLoaded', function () {
-            // Get all filter buttons
             const filterButtons = document.querySelectorAll('.filter-button');
 
-            // Get all boxes
             const boxes = document.querySelectorAll('.box');
 
-            // Add click event listeners to each filter button
             filterButtons.forEach(function (button) {
                 button.addEventListener('click', function () {
-                    // Get the color to filter by
                     const color = this.getAttribute('data-color');
 
-                    // Show/hide boxes based on the selected color
                     boxes.forEach(function (box) {
                         if (color === 'all' || box.classList.contains(color)) {
                             box.style.display = 'flex';
@@ -234,6 +227,12 @@
             });
         });
     </script>
+
+
+</body>
+
+</html>
+
 
 </body>
 
