@@ -1,16 +1,17 @@
-import boto3
 import os
+import pickle
+import warnings
+
+import boto3
 import numpy as np
 import pandas as pd
-import pickle
 import psycopg2
-import warnings
+from flask import Flask, render_template
+
+from helper_dicts import file_name_dict, logo_dict, team_name_dict
 
 warnings.filterwarnings("ignore")
 
-
-from flask import Flask, render_template, request
-from helper_dicts import logo_dict, file_name_dict, team_name_dict
 
 app = Flask(__name__)
 
@@ -57,7 +58,7 @@ def display_games():
     conn = create_db_connection()
     cursor = conn.cursor()
 
-    sql = f"select * from games where predicted_winner is not null;"
+    sql = "select * from games where predicted_winner is not null;"
 
     cursor.execute(sql)
 
@@ -166,16 +167,13 @@ def predict_games(model_type):
     )
 
     model, model_metadata = model_pickle[0]
-    old_school_model, old_school_metadata = model_pickle[1]
-    modern_model, modern_metadata = model_pickle[2]
 
     print("\n".join([f"{key}: {value}" for key, value in model_metadata.items()]))
 
     conn = create_db_connection()
     cursor = conn.cursor()
 
-    sql = f"select * from games where predicted_winner is null"
-    # sql = f"select * from games"
+    sql = "select * from games where predicted_winner is null"
 
     cursor.execute(sql)
 
@@ -187,7 +185,7 @@ def predict_games(model_type):
 
     df = df.dropna()
 
-    sql = f"select * from games where winning_team is null"
+    sql = "select * from games where winning_team is null"
 
     cursor.execute(sql)
 
