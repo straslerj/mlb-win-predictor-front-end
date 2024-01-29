@@ -9,7 +9,7 @@ import warnings
 warnings.filterwarnings("ignore")
 
 
-from flask import Flask, render_template
+from flask import Flask, render_template, request
 from helper_dicts import logo_dict, file_name_dict, team_name_dict
 
 app = Flask(__name__)
@@ -35,12 +35,24 @@ model_pickle = pickle.loads(
     s3.Bucket(os.getenv("AWS_S3_MODEL_SRC")).Object(current_file).get()["Body"].read()
 )
 
-model, model_metadata = model_pickle
+model, model_metadata = model_pickle[0]
+old_school_model, old_school_metadata = model_pickle[1]
+modern_model, modern_metadata = model_pickle[2]
 
 
 @app.route("/")
 def display_games():
-    predict_games()
+    current_file = max(bucket.objects.all(), key=lambda obj: obj.key).key
+
+    model_pickle = pickle.loads(
+        s3.Bucket("mlb-prediction-model").Object(current_file).get()["Body"].read()
+    )
+
+    model, model_metadata = model_pickle[0]
+    old_school_model, old_school_metadata = model_pickle[1]
+    modern_model, modern_metadata = model_pickle[2]
+
+    predict_games(model)
 
     conn = create_db_connection()
     cursor = conn.cursor()
@@ -108,9 +120,15 @@ def display_about():
         .read()
     )
 
-    _, model_metadata = model_pickle
+    model, model_metadata = model_pickle[0]
+    old_school_model, old_school_model_metadata = model_pickle[1]
+    modern_model, modern_model_metadata = model_pickle[2]
 
     parameter_count = len(model_metadata["parameters used"].split(","))
+    old_school_parameter_count = len(
+        old_school_model_metadata["parameters used"].split(",")
+    )
+    modern_parameter_count = len(modern_model_metadata["parameters used"].split(","))
     return render_template(
         "about.html",
         date_created=model_metadata["date created"],
@@ -120,10 +138,24 @@ def display_about():
         accuracy=model_metadata["accuracy"],
         training_set_size=model_metadata["training set size"],
         testing_set_size=model_metadata["testing set size"],
+        old_school_date_created=old_school_model_metadata["date created"],
+        old_school_model_type=old_school_model_metadata["model type"],
+        old_school_parameters_used=old_school_model_metadata["parameters used"],
+        old_school_parameter_count=old_school_parameter_count,
+        old_school_accuracy=old_school_model_metadata["accuracy"],
+        old_school_training_set_size=old_school_model_metadata["training set size"],
+        old_school_testing_set_size=old_school_model_metadata["testing set size"],
+        modern_date_created=modern_model_metadata["date created"],
+        modern_model_type=modern_model_metadata["model type"],
+        modern_parameters_used=modern_model_metadata["parameters used"],
+        modern_parameter_count=modern_parameter_count,
+        modern_accuracy=modern_model_metadata["accuracy"],
+        modern_training_set_size=modern_model_metadata["training set size"],
+        modern_testing_set_size=modern_model_metadata["testing set size"],
     )
 
 
-def predict_games():
+def predict_games(model_type):
     current_file = max(bucket.objects.all(), key=lambda obj: obj.key).key
 
     model_pickle = pickle.loads(
@@ -133,7 +165,9 @@ def predict_games():
         .read()
     )
 
-    model, model_metadata = model_pickle
+    model, model_metadata = model_pickle[0]
+    old_school_model, old_school_metadata = model_pickle[1]
+    modern_model, modern_metadata = model_pickle[2]
 
     print("\n".join([f"{key}: {value}" for key, value in model_metadata.items()]))
 
@@ -141,6 +175,7 @@ def predict_games():
     cursor = conn.cursor()
 
     sql = f"select * from games where predicted_winner is null"
+    # sql = f"select * from games"
 
     cursor.execute(sql)
 
@@ -197,7 +232,34 @@ def predict_games():
         how="any",
     )
 
+    df["away_pitcher_k_bb_ratio"] = (
+        df["away_pitcher_k_nine"] / df["away_pitcher_bb_nine"]
+    )
+    df["home_pitcher_k_bb_ratio"] = (
+        df["home_pitcher_k_nine"] / df["home_pitcher_bb_nine"]
+    )
+
     for _, row in df.iterrows():
+        pitcher_era_comp = row["away_pitcher_era"] - row["home_pitcher_era"]
+        pitcher_win_percentage_comp = (
+            row["away_pitcher_win_percentage"] - row["home_pitcher_win_percentage"]
+        )
+        pitcher_win_comp = row["away_pitcher_wins"] - row["home_pitcher_wins"]
+        pitcher_losses_comp = row["away_pitcher_losses"] - row["home_pitcher_losses"]
+        pitcher_innings_pitched_comp = (
+            row["away_pitcher_innings_pitched"] - row["home_pitcher_innings_pitched"]
+        )
+        pitcher_k_nine_comp = row["away_pitcher_k_nine"] - row["home_pitcher_k_nine"]
+        pitcher_bb_nine_comp = row["away_pitcher_bb_nine"] - row["home_pitcher_bb_nine"]
+        pitcher_k_bb_diff_comp = (
+            row["away_pitcher_k_bb_diff"] - row["home_pitcher_k_bb_diff"]
+        )
+        pitcher_whip_comp = row["away_pitcher_whip"] - row["home_pitcher_whip"]
+        pitcher_babip_comp = row["away_pitcher_babip"] - row["home_pitcher_babip"]
+        pitcher_k_bb_ratio_comp = (
+            row["away_pitcher_k_bb_ratio"] - row["home_pitcher_k_bb_ratio"]
+        )
+
         pitcher_innings_pitched_comp = (
             row["away_pitcher_innings_pitched"] - row["home_pitcher_innings_pitched"]
         )
@@ -211,12 +273,17 @@ def predict_games():
 
         comparison = [
             [
+                pitcher_era_comp,
+                pitcher_win_percentage_comp,
+                pitcher_win_comp,
+                pitcher_losses_comp,
                 pitcher_innings_pitched_comp,
                 pitcher_k_nine_comp,
                 pitcher_bb_nine_comp,
                 pitcher_k_bb_diff_comp,
                 pitcher_whip_comp,
                 pitcher_babip_comp,
+                pitcher_k_bb_ratio_comp,
             ]
         ]
         comparison = np.array(comparison)
