@@ -21,6 +21,12 @@
         th {
             background-color: #f2f2f2;
         }
+
+        table th:first-child,
+        table td:first-child {
+            width: 150px;
+            /* Set a fixed width that suits your design */
+        }
     </style>
     <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/5.0.0-alpha2/css/bootstrap.min.css">
 </head>
@@ -34,14 +40,21 @@
 
     <div class="container mt-4">
         <h1>About</h1>
-        <p>This projet is designed to attempt to predict the winner of baseball games (or prove that doing so is not
+        <p>This project is designed to attempt to predict the winner of baseball games (or prove that doing so is not
             really possible...) using machine learning. To learn more about this effort, please visit
-            <a href="https://github.com/straslerj/mlb-win-predictor" target=" _blank">this GitHub repo</a>.
+            <a href="https://github.com/straslerj/mlb-win-predictor" target=" _blank">the GitHub repo for this
+                project</a> to view source code, an architecture diagram, and further explanations.
         </p>
-        <p>The goal of this website is simply to visualize the progress and provide some insights into the logic behind
+        <p>The point of this website is simply to visualize the progress and provide some insights into the logic behind
             the machine learning part. The details of the current state of the model can be seen in the below table.</p>
-
-        <table>
+        <p><i>Disclaimer: this is really a preliminary model -- I wasn't actually planning to try and predict anything
+                until the 2024 season and was going to build the model in the offseason. Why am I saying this? Mostly, I
+                don't want you to judge me for my model's lackluster performance, but I also hope you keep coming back
+                to see if there have been any improvements.</i></p>
+        <table style="width: 100%; text-align: center;">
+            <tr>
+                <th colspan="2">All Stats Model</th>
+            </tr>
             <tr>
                 <th>Date Created</th>
                 <td>{{ date_created }}</td>
@@ -71,6 +84,77 @@
                 <td>{{ testing_set_size }}</td>
             </tr>
         </table>
+
+        <table style="width: 100%; text-align: center;">
+            <tr>
+                <th colspan="2">Old-School Stats Model</th>
+            </tr>
+            <tr>
+                <th>Date Created</th>
+                <td>{{ old_school_date_created }}</td>
+            </tr>
+            <tr>
+                <th>Model Type</th>
+                <td>{{ old_school_model_type }}</td>
+            </tr>
+            <tr>
+                <th>Parameters Used</th>
+                <td>{{ old_school_parameters_used }}</td>
+            </tr>
+            <tr>
+                <th>Parameter Count</th>
+                <td>{{ old_school_parameter_count }}</td>
+            </tr>
+            <tr>
+                <th>Accuracy</th>
+                <td>{{ old_school_accuracy }}</td>
+            </tr>
+            <tr>
+                <th>Training Set Size</th>
+                <td>{{ old_school_training_set_size }}</td>
+            </tr>
+            <tr>
+                <th>Testing Set Size</th>
+                <td>{{ old_school_testing_set_size }}</td>
+            </tr>
+        </table>
+
+
+        <table style="width: 100%; text-align: center;">
+            <tr>
+                <th colspan="2">Modern Stats Model</th>
+            </tr>
+            <tr>
+                <th>Date Created</th>
+                <td>{{ modern_date_created }}</td>
+            </tr>
+            <tr>
+                <th>Model Type</th>
+                <td>{{ modern_model_type }}</td>
+            </tr>
+            <tr>
+                <th>Parameters Used</th>
+                <td>{{ modern_parameters_used }}</td>
+            </tr>
+            <tr>
+                <th>Parameter Count</th>
+                <td>{{ modern_parameter_count }}</td>
+            </tr>
+            <tr>
+                <th>Accuracy</th>
+                <td>{{ modern_accuracy }}</td>
+            </tr>
+            <tr>
+                <th>Training Set Size</th>
+                <td>{{ modern_training_set_size }}</td>
+            </tr>
+            <tr>
+                <th>Testing Set Size</th>
+                <td>{{ modern_testing_set_size }}</td>
+            </tr>
+        </table>
+
+
     </div>
 
 
