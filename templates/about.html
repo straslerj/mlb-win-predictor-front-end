@@ -40,20 +40,31 @@
 
     <div class="container mt-4">
         <h1>About</h1>
-        <p>This project is designed to attempt to predict the winner of baseball games (or prove that doing so is not
-            really possible...) using machine learning. To learn more about this effort, please visit
+        <p>This project originated as a way to see if there was a difference in prediction power between old-school
+            baseball pitcher statistics and the newer, SABR-style metrics (the results of models using different
+            parameters can be seen below). I decided a logical extension of this would
+            be a front end where game predictions, and their accuracies, are displayed. </p>
+        <p>To learn more about this effort, please visit
             <a href="https://github.com/straslerj/mlb-win-predictor" target=" _blank">the GitHub repo for this
                 project</a> to view source code, an architecture diagram, and further explanations.
         </p>
-        <p>The point of this website is simply to visualize the progress and provide some insights into the logic behind
-            the machine learning part. The details of the current state of the model can be seen in the below table.</p>
-        <p><i>Disclaimer: this is really a preliminary model -- I wasn't actually planning to try and predict anything
-                until the 2024 season and was going to build the model in the offseason. Why am I saying this? Mostly, I
-                don't want you to judge me for my model's lackluster performance, but I also hope you keep coming back
-                to see if there have been any improvements.</i></p>
-        <table style="width: 100%; text-align: center;">
-            <tr>
-                <th colspan="2">All Stats Model</th>
+        <h2>Shortcomings</h2>
+        <p>As it turns out, predicting the winner of a baseball game is hard. It's even harder if you only use half a
+            dozen or so statistics regarding the starting pitchers. As one could imagine, these statistics hardly paint
+            the whole picture of a baseball game -- I mean, it doesn't even take into account the batting of an opposing
+            team, not to mention the hundreds of other factors that go into a baseball game. I recognize these
+            shortcomings as well as the lackluster prediciton results. I have considered amending my data to have more
+            features but I would like to stick using statistics from <em>before</em> the game starts. </p>
+        <style>
+            .stats-table {
+                width: 100%;
+                text-align: center;
+                margin-bottom: 20px;
+            }
+        </style>
+        <h2>Model Results</h2>
+        <table class="stats-table">
+            <th colspan="2">All Stats Model</th>
             </tr>
             <tr>
                 <th>Date Created</th>
@@ -85,7 +96,7 @@
             </tr>
         </table>
 
-        <table style="width: 100%; text-align: center;">
+        <table class="stats-table">
             <tr>
                 <th colspan="2">Old-School Stats Model</th>
             </tr>
@@ -120,7 +131,7 @@
         </table>
 
 
-        <table style="width: 100%; text-align: center;">
+        <table class="stats-table">
             <tr>
                 <th colspan="2">Modern Stats Model</th>
             </tr>
