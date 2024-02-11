@@ -13,6 +13,14 @@ from flask import Flask, render_template, request
 from helper_dicts import logo_dict, file_name_dict, team_name_dict
 
 app = Flask(__name__)
+config_file_path = "config.env"
+if os.path.exists(config_file_path):
+    # Read environment variables from the file
+    with open(config_file_path, "r") as file:
+        for line in file:
+            if not line.startswith("#") and "=" in line:
+                key, value = line.strip().split("=", 1)
+                os.environ[key.strip()] = value.strip()
 
 MODEL_ACCESS_KEY_ID = os.getenv("MODEL_ACCESS_KEY_ID")
 MODEL_SECRET_ACCESS_KEY = os.getenv("MODEL_SECRET_ACCESS_KEY")
