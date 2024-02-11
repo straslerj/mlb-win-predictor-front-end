@@ -1,64 +1,57 @@
-import os
-import pickle
-import warnings
-
 import boto3
+import os
 import numpy as np
 import pandas as pd
+import pickle
 import psycopg2
-from flask import Flask, render_template
-
-from helper_dicts import file_name_dict, logo_dict, team_name_dict
+import warnings
 
 warnings.filterwarnings("ignore")
 
 
+from flask import Flask, render_template, request
+from helper_dicts import logo_dict, file_name_dict, team_name_dict
+
 app = Flask(__name__)
 
-
-def create_db_connection():
-    return psycopg2.connect(
-        database=os.getenv("AWS_PSQL_DB"),
-        user=os.getenv("AWS_PSQL_USER"),
-        password=os.getenv("AWS_PSQL_PASSWORD"),
-        host=os.getenv("AWS_PSQL_HOST"),
-        port=os.getenv("AWS_PSQL_PORT"),
-    )
+MODEL_ACCESS_KEY_ID = os.getenv("MODEL_ACCESS_KEY_ID")
+MODEL_SECRET_ACCESS_KEY = os.getenv("MODEL_SECRET_ACCESS_KEY")
+LOGS_ENDPOINT_URL = os.getenv("LOGS_ENDPOINT_URL")
+MODEL_BUCKET = os.getenv("MODEL_BUCKET")
+PSQL_CONNECTION_STRING = os.getenv("PSQL_CONNECTION_STRING")
+TABLE_NAME = os.getenv("MLB_DB_TABLE_NAME")
 
 
-s3 = boto3.resource("s3")
+s3 = boto3.resource(
+    service_name="s3",
+    aws_access_key_id=MODEL_ACCESS_KEY_ID,
+    aws_secret_access_key=MODEL_SECRET_ACCESS_KEY,
+    endpoint_url=LOGS_ENDPOINT_URL,
+)
 
-bucket = s3.Bucket(os.getenv("AWS_S3_MODEL_SRC"))
+bucket = s3.Bucket(MODEL_BUCKET)
 
 current_file = max(bucket.objects.all(), key=lambda obj: obj.key).key
 
-model_pickle = pickle.loads(
-    s3.Bucket(os.getenv("AWS_S3_MODEL_SRC")).Object(current_file).get()["Body"].read()
-)
+model_pickle = pickle.loads(bucket.Object(current_file).get()["Body"].read())
 
 model, model_metadata = model_pickle[0]
 old_school_model, old_school_metadata = model_pickle[1]
 modern_model, modern_metadata = model_pickle[2]
 
 
+def create_db_connection():
+    return psycopg2.connect(PSQL_CONNECTION_STRING)
+
+
 @app.route("/")
 def display_games():
-    current_file = max(bucket.objects.all(), key=lambda obj: obj.key).key
-
-    model_pickle = pickle.loads(
-        s3.Bucket("mlb-prediction-model").Object(current_file).get()["Body"].read()
-    )
-
-    model, model_metadata = model_pickle[0]
-    old_school_model, old_school_metadata = model_pickle[1]
-    modern_model, modern_metadata = model_pickle[2]
-
-    predict_games(model)
+    predict_games()
 
     conn = create_db_connection()
     cursor = conn.cursor()
 
-    sql = "select * from games where predicted_winner is not null;"
+    sql = f"select * from {TABLE_NAME} where predicted_winner is not null;"
 
     cursor.execute(sql)
 
@@ -83,17 +76,21 @@ def display_games():
         game = {
             "team1": row["home_team_name"],
             "team2": row["away_team_name"],
-            "prediction": row["home_team_name"]
-            if row["predicted_winner"] == 1
-            else row["away_team_name"],
-            "actual_winner": team_name_dict[row["winning_team"]]
-            if not future_game
-            else "TBD",
+            "prediction": (
+                row["home_team_name"]
+                if row["predicted_winner"] == 1
+                else row["away_team_name"]
+            ),
+            "actual_winner": (
+                team_name_dict[row["winning_team"]] if not future_game else "TBD"
+            ),
             "team1_logo": logo_dict[file_name_dict[row["home_team_id"]]],
             "team2_logo": logo_dict[file_name_dict[row["away_team_id"]]],
-            "box": f"https://www.mlb.com/video/game/{row['game_id']}"
-            if not future_game
-            else f"https://www.mlb.com/news/gamepreview-{row['game_id']}",
+            "box": (
+                f"https://www.mlb.com/video/game/{row['game_id']}"
+                if not future_game
+                else f"https://www.mlb.com/news/gamepreview-{row['game_id']}"
+            ),
         }
 
         if game["actual_winner"] == game["prediction"]:
@@ -112,24 +109,9 @@ def display_games():
 
 @app.route("/about")
 def display_about():
-    current_file = max(bucket.objects.all(), key=lambda obj: obj.key).key
-
-    model_pickle = pickle.loads(
-        s3.Bucket(os.getenv("AWS_S3_MODEL_SRC"))
-        .Object(current_file)
-        .get()["Body"]
-        .read()
-    )
-
-    model, model_metadata = model_pickle[0]
-    old_school_model, old_school_model_metadata = model_pickle[1]
-    modern_model, modern_model_metadata = model_pickle[2]
-
     parameter_count = len(model_metadata["parameters used"].split(","))
-    old_school_parameter_count = len(
-        old_school_model_metadata["parameters used"].split(",")
-    )
-    modern_parameter_count = len(modern_model_metadata["parameters used"].split(","))
+    old_school_parameter_count = len(old_school_metadata["parameters used"].split(","))
+    modern_parameter_count = len(modern_metadata["parameters used"].split(","))
     return render_template(
         "about.html",
         date_created=model_metadata["date created"],
@@ -139,41 +121,30 @@ def display_about():
         accuracy=model_metadata["accuracy"],
         training_set_size=model_metadata["training set size"],
         testing_set_size=model_metadata["testing set size"],
-        old_school_date_created=old_school_model_metadata["date created"],
-        old_school_model_type=old_school_model_metadata["model type"],
-        old_school_parameters_used=old_school_model_metadata["parameters used"],
+        old_school_date_created=old_school_metadata["date created"],
+        old_school_model_type=old_school_metadata["model type"],
+        old_school_parameters_used=old_school_metadata["parameters used"],
         old_school_parameter_count=old_school_parameter_count,
-        old_school_accuracy=old_school_model_metadata["accuracy"],
-        old_school_training_set_size=old_school_model_metadata["training set size"],
-        old_school_testing_set_size=old_school_model_metadata["testing set size"],
-        modern_date_created=modern_model_metadata["date created"],
-        modern_model_type=modern_model_metadata["model type"],
-        modern_parameters_used=modern_model_metadata["parameters used"],
+        old_school_accuracy=old_school_metadata["accuracy"],
+        old_school_training_set_size=old_school_metadata["training set size"],
+        old_school_testing_set_size=old_school_metadata["testing set size"],
+        modern_date_created=modern_metadata["date created"],
+        modern_model_type=modern_metadata["model type"],
+        modern_parameters_used=modern_metadata["parameters used"],
         modern_parameter_count=modern_parameter_count,
-        modern_accuracy=modern_model_metadata["accuracy"],
-        modern_training_set_size=modern_model_metadata["training set size"],
-        modern_testing_set_size=modern_model_metadata["testing set size"],
+        modern_accuracy=modern_metadata["accuracy"],
+        modern_training_set_size=modern_metadata["training set size"],
+        modern_testing_set_size=modern_metadata["testing set size"],
     )
 
 
-def predict_games(model_type):
-    current_file = max(bucket.objects.all(), key=lambda obj: obj.key).key
-
-    model_pickle = pickle.loads(
-        s3.Bucket(os.getenv("AWS_S3_MODEL_SRC"))
-        .Object(current_file)
-        .get()["Body"]
-        .read()
-    )
-
-    model, model_metadata = model_pickle[0]
-
+def predict_games():
     print("\n".join([f"{key}: {value}" for key, value in model_metadata.items()]))
 
     conn = create_db_connection()
     cursor = conn.cursor()
 
-    sql = "select * from games where predicted_winner is null"
+    sql = f"select * from {TABLE_NAME} where predicted_winner is null"
 
     cursor.execute(sql)
 
@@ -185,7 +156,7 @@ def predict_games(model_type):
 
     df = df.dropna()
 
-    sql = "select * from games where winning_team is null"
+    sql = f"select * from {TABLE_NAME} where winning_team is null"
 
     cursor.execute(sql)
 
@@ -290,7 +261,7 @@ def predict_games(model_type):
 
         prediction = model.predict(comparison)
 
-        sql = f"UPDATE games SET predicted_winner = {prediction[0]} WHERE game_id = {int(row['game_id'])};"
+        sql = f"UPDATE {TABLE_NAME} SET predicted_winner = {prediction[0]} WHERE game_id = {int(row['game_id'])};"
 
         print(sql)
         cursor.execute(sql)
